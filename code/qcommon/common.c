@@ -1964,7 +1964,6 @@ void Com_QueueEvent( int time, sysEventType_t type, int value, int value2, int p
 	sysEvent_t  *ev;
 
 	ev = &eventQueue[ eventHead & MASK_QUEUED_EVENTS ];
-    ev->evNeedFree = qfalse;
 
 	if ( eventHead - eventTail >= MAX_QUEUED_EVENTS )
 	{
@@ -1998,17 +1997,16 @@ Com_GetSystemEvent
 
 ================
 */
-sysEvent_t *Com_GetSystemEvent( void )
+void Com_GetSystemEvent(sysEvent_t *ev)
 {
-	sysEvent_t  *ev;
 	char        *s;
 
 	// return if we have data
 	if ( eventHead > eventTail )
 	{
 		eventTail++;
-        eventQueue[(eventTail - 1) & MASK_QUEUED_EVENTS].evNeedFree = qfalse;
-		return &eventQueue[ ( eventTail - 1 ) & MASK_QUEUED_EVENTS ];
+        *ev = eventQueue[ ( eventTail - 1 ) & MASK_QUEUED_EVENTS ];
+        return;
 	}
 
 	// check for console commands
@@ -2028,17 +2026,13 @@ sysEvent_t *Com_GetSystemEvent( void )
 	if ( eventHead > eventTail )
 	{
 		eventTail++;
-        eventQueue[(eventTail - 1) & MASK_QUEUED_EVENTS].evNeedFree = qfalse;
-		return &eventQueue[ ( eventTail - 1 ) & MASK_QUEUED_EVENTS ];
+		*ev = eventQueue[ ( eventTail - 1 ) & MASK_QUEUED_EVENTS ];
+        return;
 	}
 
 	// create an empty event to return
-    ev = Z_Malloc (sizeof (sysEvent_t));
-    ev->evNeedFree = qtrue;
-	memset(ev, 0, sizeof( sysEvent_t ) );
+    memset (ev, 0, sizeof (*ev));
 	ev->evTime = Sys_Milliseconds();
-
-	return ev;
 }
 
 /*
@@ -2046,14 +2040,11 @@ sysEvent_t *Com_GetSystemEvent( void )
 Com_GetRealEvent
 =================
 */
-sysEvent_t	*Com_GetRealEvent( void ) {
+void Com_GetRealEvent( sysEvent_t *ev ) {
 	int			r;
-	sysEvent_t	*ev;
 
 	// either get an event from the system or the journal file
 	if ( com_journal->integer == 2 ) {
-        ev = malloc (sizeof (ev));
-        ev->evNeedFree = qtrue;
 		r = FS_Read( ev, sizeof(ev), com_journalFile );
 		if ( r != sizeof(ev) ) {
 			Com_Error( ERR_FATAL, "Error reading from journal file" );
@@ -2067,7 +2058,7 @@ sysEvent_t	*Com_GetRealEvent( void ) {
 			}
         }
 	} else {
-		ev = Com_GetSystemEvent();
+		Com_GetSystemEvent(ev);
 
 		// write the journal value out if needed
 		if ( com_journal->integer == 1 ) {
@@ -2083,8 +2074,6 @@ sysEvent_t	*Com_GetRealEvent( void ) {
 			}
 		}
 	}
-
-	return ev;
 }
 
 
@@ -2140,12 +2129,13 @@ void Com_PushEvent( sysEvent_t *event ) {
 Com_GetEvent
 =================
 */
-sysEvent_t	*Com_GetEvent( void ) {
+void Com_GetEvent( sysEvent_t *ev ) {
 	if ( com_pushedEventsHead > com_pushedEventsTail ) {
 		com_pushedEventsTail++;
-		return &com_pushedEvents[ (com_pushedEventsTail-1) & (MAX_PUSHED_EVENTS-1) ];
-	}
-	return Com_GetRealEvent();
+        *ev = com_pushedEvents[ (com_pushedEventsTail-1) & (MAX_PUSHED_EVENTS-1) ];
+	} else {
+    	Com_GetRealEvent(ev);
+    }
 }
 
 /*
@@ -2181,7 +2171,7 @@ Returns last event time
 =================
 */
 int Com_EventLoop( void ) {
-	sysEvent_t	*ev;
+	sysEvent_t	ev;
 	netadr_t	evFrom;
 	byte		bufData[MAX_MSGLEN];
 	msg_t		buf;
@@ -2189,10 +2179,10 @@ int Com_EventLoop( void ) {
 	MSG_Init( &buf, bufData, sizeof( bufData ) );
 
 	while ( 1 ) {
-		ev = Com_GetEvent();
+		Com_GetEvent(&ev);
 
 		// if no more events are available
-		if ( ev->evType == SE_NONE ) {
+		if ( ev.evType == SE_NONE ) {
 			// manually send packet events for the loopback channel
 			while ( NET_GetLoopPacket( NS_CLIENT, &evFrom, &buf ) ) {
 				CL_PacketEvent( &evFrom, &buf );
@@ -2205,45 +2195,38 @@ int Com_EventLoop( void ) {
 				}
 			}
 
-            int evTime = ev->evTime;
-            if (ev->evNeedFree) {
-                free (ev);
-            }
+            int evTime = ev.evTime;
 			return evTime;
 		}
 
 
-		switch(ev->evType)
+		switch(ev.evType)
 		{
 			case SE_KEY:
-				CL_KeyEvent( ev->evValue, ev->evValue2, ev->evTime );
+				CL_KeyEvent( ev.evValue, ev.evValue2, ev.evTime );
 			break;
 			case SE_CHAR:
-				CL_CharEvent( ev->evValue );
+				CL_CharEvent( ev.evValue );
 			break;
 			case SE_MOUSE:
-				CL_MouseEvent( ev->evValue, ev->evValue2, ev->evTime );
+				CL_MouseEvent( ev.evValue, ev.evValue2, ev.evTime );
 			break;
 			case SE_JOYSTICK_AXIS:
-				CL_JoystickEvent( ev->evValue, ev->evValue2, ev->evTime );
+				CL_JoystickEvent( ev.evValue, ev.evValue2, ev.evTime );
 			break;
 			case SE_CONSOLE:
-				Cbuf_AddText( (char *)ev->evPtr );
+				Cbuf_AddText( (char *)ev.evPtr );
 				Cbuf_AddText( "\n" );
 			break;
 			default:
-				Com_Error( ERR_FATAL, "Com_EventLoop: bad event type %i", ev->evType );
+				Com_Error( ERR_FATAL, "Com_EventLoop: bad event type %i", ev.evType );
 			break;
 		}
 
 		// free any block data
-		if ( ev->evPtr ) {
-			Z_Free( ev->evPtr );
+		if ( ev.evPtr ) {
+			Z_Free( ev.evPtr );
 		}
-
-        if (ev->evNeedFree) {
-            Z_Free (ev);
-        }
 	}
 
 	return 0;	// never reached
@@ -2257,18 +2240,17 @@ Can be used for profiling, but will be journaled accurately
 ================
 */
 int Com_Milliseconds (void) {
-	sysEvent_t	*ev;
+	sysEvent_t	ev;
 
 	// get events and push them until we get a null event with the current time
 	do {
-
-		ev = Com_GetRealEvent();
-		if ( ev->evType != SE_NONE ) {
-			Com_PushEvent( ev );
+		Com_GetRealEvent(&ev);
+		if ( ev.evType != SE_NONE ) {
+			Com_PushEvent( &ev );
 		}
-	} while ( ev->evType != SE_NONE );
+	} while ( ev.evType != SE_NONE );
 	
-	return ev->evTime;
+	return ev.evTime;
 }
 
 //============================================================================

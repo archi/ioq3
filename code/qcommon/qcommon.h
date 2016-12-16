@@ -811,12 +811,11 @@ typedef struct {
 	int				evValue, evValue2;
 	int				evPtrLength;	// bytes of data pointed to by evPtr, for journaling
 	void			*evPtr;			// this must be manually freed if not NULL
-    qboolean        evNeedFree;
 } sysEvent_t;
 
 void		Com_QueueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength, void *ptr );
 int			Com_EventLoop( void );
-sysEvent_t	*Com_GetSystemEvent( void );
+void        Com_GetSystemEvent( sysEvent_t *ev );
 
 char		*CopyString( const char *in );
 void		Info_Print( const char *s );
