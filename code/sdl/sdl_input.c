@@ -20,6 +20,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
+#undef __SSE2__
+#undef __SSE__
+#undef __MMX__
+#undef __3dNOW__
+
 #ifdef USE_LOCAL_HEADERS
 #	include "SDL.h"
 #else

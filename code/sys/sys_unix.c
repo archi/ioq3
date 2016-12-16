@@ -39,6 +39,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <fenv.h>
 #include <sys/wait.h>
 
+#ifndef S_IFDIR
+#define S_IFDIR 16384
+#endif
+
 qboolean stdinIsATTY;
 
 // Used to determine where to store user-specific files

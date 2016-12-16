@@ -1,4 +1,8 @@
 /* GIMP RGBA C-Source image dump (sdl_icon.h) */
+#undef __SSE2__
+#undef __SSE__
+#undef __MMX__
+#undef __3dNOW__
 
 static const struct {
   unsigned int 	 width;
