@@ -663,7 +663,7 @@ void SV_SendClientMessages(void)
 		}
 
 		if(!(c->netchan.remoteAddress.type == NA_LOOPBACK ||
-		     (sv_lanForceRate->integer && Sys_IsLANAddress(c->netchan.remoteAddress))))
+		     (sv_lanForceRate->integer && Sys_IsLANAddress(&c->netchan.remoteAddress))))
 		{
 			// rate control for clients not on LAN 
 			

@@ -50,7 +50,7 @@ as well as IPv6 connections, since there is no way to use the
 v4-only auth server for these new types of connections.
 =================
 */
-void SV_GetChallenge(netadr_t from)
+void SV_GetChallenge(netadr_t* from)
 {
 	int		i;
 	int		oldest;
@@ -108,7 +108,7 @@ void SV_GetChallenge(netadr_t from)
 
 	for(i = 0 ; i < MAX_CHALLENGES ; i++, challenge++)
 	{
-		if(!challenge->connected && NET_CompareAdr(from, challenge->adr))
+		if(!challenge->connected && NET_CompareAdr(from, &challenge->adr))
 		{
 			wasfound = qtrue;
 			
@@ -134,7 +134,7 @@ void SV_GetChallenge(netadr_t from)
 		// this is the first time this client has asked for a challenge
 		challenge = &svs.challenges[oldest];
 		challenge->clientChallenge = clientChallenge;
-		challenge->adr = from;
+		challenge->adr = *from;
 		challenge->firstTime = svs.time;
 		challenge->connected = qfalse;
 	}
@@ -189,9 +189,9 @@ void SV_GetChallenge(netadr_t from)
 			
 			// the 0 is for backwards compatibility with obsolete sv_allowanonymous flags
 			// getIpAuthorize <challenge> <IP> <game> 0 <auth-flag>
-			NET_OutOfBandPrint( NS_SERVER, svs.authorizeAddress,
+			NET_OutOfBandPrint( NS_SERVER, &svs.authorizeAddress,
 				"getIpAuthorize %i %i.%i.%i.%i %s 0 %s",  challenge->challenge,
-				from.ip[0], from.ip[1], from.ip[2], from.ip[3], game, sv_strictAuth->string );
+				from->ip[0], from->ip[1], from->ip[2], from->ip[3], game, sv_strictAuth->string );
 			
 			return;
 		}
@@ -199,7 +199,7 @@ void SV_GetChallenge(netadr_t from)
 #endif
 
 	challenge->pingTime = svs.time;
-	NET_OutOfBandPrint(NS_SERVER, challenge->adr, "challengeResponse %d %d %d",
+	NET_OutOfBandPrint(NS_SERVER, &challenge->adr, "challengeResponse %d %d %d",
 			   challenge->challenge, clientChallenge, com_protocol->integer);
 }
 
@@ -213,14 +213,14 @@ If we have a challenge adr for that ip, send the
 challengeResponse to it
 ====================
 */
-void SV_AuthorizeIpPacket( netadr_t from ) {
+void SV_AuthorizeIpPacket( netadr_t* from ) {
 	int		challenge;
 	int		i;
 	char	*s;
 	char	*r;
 	challenge_t *challengeptr;
 
-	if ( !NET_CompareBaseAdr( from, svs.authorizeAddress ) ) {
+	if ( !NET_CompareBaseAdr( from, &svs.authorizeAddress ) ) {
 		Com_Printf( "SV_AuthorizeIpPacket: not from authorize server\n" );
 		return;
 	}
@@ -246,21 +246,21 @@ void SV_AuthorizeIpPacket( netadr_t from ) {
 
 	if ( !Q_stricmp( s, "demo" ) ) {
 		// they are a demo client trying to connect to a real server
-		NET_OutOfBandPrint( NS_SERVER, challengeptr->adr, "print\nServer is not a demo server\n" );
+		NET_OutOfBandPrint( NS_SERVER, &challengeptr->adr, "print\nServer is not a demo server\n" );
 		// clear the challenge record so it won't timeout and let them through
 		Com_Memset( challengeptr, 0, sizeof( *challengeptr ) );
 		return;
 	}
 	if ( !Q_stricmp( s, "accept" ) ) {
-		NET_OutOfBandPrint(NS_SERVER, challengeptr->adr,
+		NET_OutOfBandPrint(NS_SERVER, &challengeptr->adr,
 			"challengeResponse %d %d %d", challengeptr->challenge, challengeptr->clientChallenge, com_protocol->integer);
 		return;
 	}
 	if ( !Q_stricmp( s, "unknown" ) ) {
 		if (!r) {
-			NET_OutOfBandPrint( NS_SERVER, challengeptr->adr, "print\nAwaiting CD key authorization\n" );
+			NET_OutOfBandPrint( NS_SERVER, &challengeptr->adr, "print\nAwaiting CD key authorization\n" );
 		} else {
-			NET_OutOfBandPrint( NS_SERVER, challengeptr->adr, "print\n%s\n", r);
+			NET_OutOfBandPrint( NS_SERVER, &challengeptr->adr, "print\n%s\n", r);
 		}
 		// clear the challenge record so it won't timeout and let them through
 		Com_Memset( challengeptr, 0, sizeof( *challengeptr ) );
@@ -269,9 +269,9 @@ void SV_AuthorizeIpPacket( netadr_t from ) {
 
 	// authorization failed
 	if (!r) {
-		NET_OutOfBandPrint( NS_SERVER, challengeptr->adr, "print\nSomeone is using this CD Key\n" );
+		NET_OutOfBandPrint( NS_SERVER, &challengeptr->adr, "print\nSomeone is using this CD Key\n" );
 	} else {
-		NET_OutOfBandPrint( NS_SERVER, challengeptr->adr, "print\n%s\n", r );
+		NET_OutOfBandPrint( NS_SERVER, &challengeptr->adr, "print\n%s\n", r );
 	}
 
 	// clear the challenge record so it won't timeout and let them through
@@ -305,7 +305,7 @@ static qboolean SV_IsBanned(netadr_t *from, qboolean isexception)
 		
 		if(curban->isexception == isexception)
 		{
-			if(NET_CompareBaseAdrMask(curban->ip, *from, curban->subnet))
+			if(NET_CompareBaseAdrMask(&curban->ip, from, curban->subnet))
 				return qtrue;
 		}
 	}
@@ -321,7 +321,7 @@ A "connect" OOB command has been received
 ==================
 */
 
-void SV_DirectConnect( netadr_t from ) {
+void SV_DirectConnect( netadr_t* from ) {
 	char		userinfo[MAX_INFO_STRING];
 	int			i;
 	client_t	*cl, *newcl;
@@ -343,7 +343,7 @@ void SV_DirectConnect( netadr_t from ) {
 	Com_DPrintf ("SVC_DirectConnect ()\n");
 	
 	// Check whether this client is banned.
-	if(SV_IsBanned(&from, qfalse))
+	if(SV_IsBanned(from, qfalse))
 	{
 		NET_OutOfBandPrint(NS_SERVER, from, "print\nYou are banned from this server.\n");
 		return;
@@ -376,9 +376,9 @@ void SV_DirectConnect( netadr_t from ) {
 		if ( cl->state == CS_FREE ) {
 			continue;
 		}
-		if ( NET_CompareBaseAdr( from, cl->netchan.remoteAddress )
+		if ( NET_CompareBaseAdr( from, &cl->netchan.remoteAddress )
 			&& ( cl->netchan.qport == qport 
-			|| from.port == cl->netchan.remoteAddress.port ) ) {
+			|| from->port == cl->netchan.remoteAddress.port ) ) {
 			if (( svs.time - cl->lastConnectTime) 
 				< (sv_reconnectlimit->integer * 1000)) {
 				Com_DPrintf ("%s:reconnect rejected : too soon\n", NET_AdrToString (from));
@@ -409,7 +409,7 @@ void SV_DirectConnect( netadr_t from ) {
 
 		for (i=0; i<MAX_CHALLENGES; i++)
 		{
-			if (NET_CompareAdr(from, svs.challenges[i].adr))
+			if (NET_CompareAdr(from, &svs.challenges[i].adr))
 			{
 				if(challenge == svs.challenges[i].challenge)
 					break;
@@ -460,9 +460,9 @@ void SV_DirectConnect( netadr_t from ) {
 		if ( cl->state == CS_FREE ) {
 			continue;
 		}
-		if ( NET_CompareBaseAdr( from, cl->netchan.remoteAddress )
+		if ( NET_CompareBaseAdr( from, &cl->netchan.remoteAddress )
 			&& ( cl->netchan.qport == qport 
-			|| from.port == cl->netchan.remoteAddress.port ) ) {
+			|| from->port == cl->netchan.remoteAddress.port ) ) {
 			Com_Printf ("%s:reconnect\n", NET_AdrToString (from));
 			newcl = cl;
 
@@ -650,7 +650,7 @@ void SV_DropClient( client_t *drop, const char *reason ) {
 
 		for (i = 0 ; i < MAX_CHALLENGES ; i++, challenge++)
 		{
-			if(NET_CompareAdr(drop->netchan.remoteAddress, challenge->adr))
+			if(NET_CompareAdr(&drop->netchan.remoteAddress, &challenge->adr))
 			{
 				Com_Memset(challenge, 0, sizeof(*challenge));
 				break;
@@ -1404,7 +1404,7 @@ void SV_UserinfoChanged( client_t *cl ) {
 
 	// if the client is on the same subnet as the server and we aren't running an
 	// internet public server, assume they don't need a rate choke
-	if ( Sys_IsLANAddress( cl->netchan.remoteAddress ) && com_dedicated->integer != 2 && sv_lanForceRate->integer == 1) {
+	if ( Sys_IsLANAddress( &cl->netchan.remoteAddress ) && com_dedicated->integer != 2 && sv_lanForceRate->integer == 1) {
 		cl->rate = 99999;	// lans should not rate limit
 	} else {
 		val = Info_ValueForKey (cl->userinfo, "rate");
@@ -1467,10 +1467,10 @@ void SV_UserinfoChanged( client_t *cl ) {
 	// TTimo
 	// maintain the IP information
 	// the banning code relies on this being consistently present
-	if( NET_IsLocalAddress(cl->netchan.remoteAddress) )
+	if( NET_IsLocalAddress(&cl->netchan.remoteAddress) )
 		ip = "localhost";
 	else
-		ip = (char*)NET_AdrToString( cl->netchan.remoteAddress );
+		ip = (char*)NET_AdrToString( &cl->netchan.remoteAddress );
 
 	val = Info_ValueForKey( cl->userinfo, "ip" );
 	if( val[0] )

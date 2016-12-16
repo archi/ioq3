@@ -575,8 +575,7 @@ void CL_FinishMove( usercmd_t *cmd ) {
 CL_CreateCmd
 =================
 */
-usercmd_t CL_CreateCmd( void ) {
-	usercmd_t	cmd;
+void CL_CreateCmd(usercmd_t *cmd ) {
 	vec3_t		oldAngles;
 
 	VectorCopy( cl.viewangles, oldAngles );
@@ -584,18 +583,18 @@ usercmd_t CL_CreateCmd( void ) {
 	// keyboard angle adjustment
 	CL_AdjustAngles ();
 	
-	Com_Memset( &cmd, 0, sizeof( cmd ) );
+	Com_Memset( cmd, 0, sizeof( usercmd_t ) );
 
-	CL_CmdButtons( &cmd );
+	CL_CmdButtons( cmd );
 
 	// get basic movement from keyboard
-	CL_KeyMove( &cmd );
+	CL_KeyMove( cmd );
 
 	// get basic movement from mouse
-	CL_MouseMove( &cmd );
+	CL_MouseMove( cmd );
 
 	// get basic movement from joystick
-	CL_JoystickMove( &cmd );
+	CL_JoystickMove( cmd );
 
 	// check to make sure the angles haven't wrapped
 	if ( cl.viewangles[PITCH] - oldAngles[PITCH] > 90 ) {
@@ -605,7 +604,7 @@ usercmd_t CL_CreateCmd( void ) {
 	} 
 
 	// store out the final values
-	CL_FinishMove( &cmd );
+	CL_FinishMove( cmd );
 
 	// draw debug graphs of turning for mouse testing
 	if ( cl_debugMove->integer ) {
@@ -616,8 +615,6 @@ usercmd_t CL_CreateCmd( void ) {
 			SCR_DebugGraph( fabs(cl.viewangles[PITCH] - oldAngles[PITCH]) );
 		}
 	}
-
-	return cmd;
 }
 
 
@@ -655,7 +652,7 @@ void CL_CreateNewCommands( void ) {
 	// generate a command for this frame
 	cl.cmdNumber++;
 	cmdNum = cl.cmdNumber & CMD_MASK;
-	cl.cmds[cmdNum] = CL_CreateCmd ();
+	CL_CreateCmd (&(cl.cmds[cmdNum]));
 }
 
 /*
@@ -699,7 +696,7 @@ qboolean CL_ReadyToSendPacket( void ) {
 	}
 
 	// send every frame for LAN
-	if ( cl_lanForcePackets->integer && Sys_IsLANAddress( clc.netchan.remoteAddress ) ) {
+	if ( cl_lanForcePackets->integer && Sys_IsLANAddress( &clc.netchan.remoteAddress ) ) {
 		return qtrue;
 	}
 
