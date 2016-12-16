@@ -594,7 +594,7 @@ int BotExportTest(int parm0, char *parm1, vec3_t parm2, vec3_t parm3)
 //	AAS_TestMovementPrediction(1, parm2, forward);
 /*
     //trace the line to find the hit point
-	trace = AAS_TraceClientBBox(eye, end, PRESENCE_NORMAL, 1);
+	AAS_TraceClientBBox(&trace, eye, end, PRESENCE_NORMAL, 1);
 	if (!line[0]) line[0] = botimport.DebugLineCreate();
 	botimport.DebugLineShow(line[0], eye, trace.endpos, LINECOLOR_BLUE);
 	//
@@ -618,7 +618,7 @@ int BotExportTest(int parm0, char *parm1, vec3_t parm2, vec3_t parm3)
 	start_time = clock();
 	for (i = 0; i < 2000; i++)
 	{
-		AAS_Trace(eye, mins, maxs, end, 1, MASK_PLAYERSOLID);
+		AAS_Trace(NULL, eye, mins, maxs, end, 1, MASK_PLAYERSOLID);
 	} //end for
 	end_time = clock();
 	botimport.Print(PRT_MESSAGE, "id %lu clocks, %lu CLOCKS_PER_SEC\n", end_time - start_time, CLOCKS_PER_SEC);
@@ -627,8 +627,8 @@ int BotExportTest(int parm0, char *parm1, vec3_t parm2, vec3_t parm3)
     // TTimo: nested comments are BAD for gcc -Werror, use #if 0 instead..
 #if 0
 	AAS_ClearShownDebugLines();
-	//bsptrace = AAS_Trace(eye, NULL, NULL, end, 1, MASK_PLAYERSOLID);
-	bsptrace = AAS_Trace(eye, mins, maxs, end, 1, MASK_PLAYERSOLID);
+	//AAS_Trace(&bsptrace, eye, NULL, NULL, end, 1, MASK_PLAYERSOLID);
+	AAS_Trace(&bsptrace, eye, mins, maxs, end, 1, MASK_PLAYERSOLID);
 	if (!line[0]) line[0] = botimport.DebugLineCreate();
 	botimport.DebugLineShow(line[0], eye, bsptrace.endpos, LINECOLOR_YELLOW);
 	if (bsptrace.fraction < 1.0)

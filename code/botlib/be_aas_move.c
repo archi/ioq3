@@ -60,7 +60,7 @@ int AAS_DropToFloor(vec3_t origin, vec3_t mins, vec3_t maxs)
 
 	VectorCopy(origin, end);
 	end[2] -= 100;
-	trace = AAS_Trace(origin, mins, maxs, end, 0, CONTENTS_SOLID);
+	AAS_Trace(&trace, origin, mins, maxs, end, 0, CONTENTS_SOLID);
 	if (trace.startsolid) return qfalse;
 	VectorCopy(trace.endpos, origin);
 	return qtrue;
@@ -191,7 +191,7 @@ int AAS_OnGround(vec3_t origin, int presencetype, int passent)
 	VectorCopy(origin, end);
 	end[2] -= 10;
 
-	trace = AAS_TraceClientBBox(origin, end, presencetype, passent);
+	AAS_TraceClientBBox(&trace, origin, end, presencetype, passent);
 
 	//if in solid
 	if (trace.startsolid) return qfalse;
@@ -310,7 +310,7 @@ float AAS_WeaponJumpZVelocity(vec3_t origin, float radiusdamage)
 	//end point of the trace
 	VectorMA(start, 500, forward, end);
 	//trace a line to get the impact point
-	bsptrace = AAS_Trace(start, NULL, NULL, end, 1, CONTENTS_SOLID);
+	AAS_Trace(&bsptrace, start, NULL, NULL, end, 1, CONTENTS_SOLID);
 	//calculate the damage the bot will get from the rocket impact
 	VectorAdd(botmins, botmaxs, v);
 	VectorMA(origin, 0.5, v, v);
@@ -639,7 +639,7 @@ int AAS_ClientMovementPrediction(struct aas_clientmove_s *move,
 		{
 			VectorAdd(org, left_test_vel, end);
 			//trace a bounding box
-			trace = AAS_TraceClientBBox(org, end, presencetype, entnum);
+			AAS_TraceClientBBox(&trace, org, end, presencetype, entnum);
 			//
 //#ifdef AAS_MOVE_DEBUG
 			if (visualize)
@@ -776,7 +776,7 @@ int AAS_ClientMovementPrediction(struct aas_clientmove_s *move,
 					VectorMA(org, -0.25, plane->normal, start);
 					VectorCopy(start, stepend);
 					start[2] += phys_maxstep;
-					steptrace = AAS_TraceClientBBox(start, stepend, presencetype, entnum);
+					AAS_TraceClientBBox(&steptrace, start, stepend, presencetype, entnum);
 					//
 					if (!steptrace.startsolid)
 					{
@@ -938,7 +938,7 @@ int AAS_ClientMovementPrediction(struct aas_clientmove_s *move,
 			VectorCopy(org, start);
 			VectorCopy(start, end);
 			end[2] -= 48 + aassettings.phys_maxbarrier;
-			gaptrace = AAS_TraceClientBBox(start, end, PRESENCE_CROUCH, -1);
+			AAS_TraceClientBBox(&gaptrace, start, end, PRESENCE_CROUCH, -1);
 			//if solid is found the bot cannot walk any further and will not fall into a gap
 			if (!gaptrace.startsolid)
 			{

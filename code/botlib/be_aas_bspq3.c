@@ -144,11 +144,15 @@ void PrintContents(int contents)
 // Returns:					-
 // Changes Globals:		-
 //===========================================================================
-bsp_trace_t AAS_Trace(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int passent, int contentmask)
+void AAS_Trace(bsp_trace_t *bsptrace, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int passent, int contentmask)
 {
-	bsp_trace_t bsptrace;
-	botimport.Trace(&bsptrace, start, mins, maxs, end, passent, contentmask);
-	return bsptrace;
+    if (bsptrace) {
+	    botimport.Trace(bsptrace, start, mins, maxs, end, passent, contentmask);
+    } else {
+        bsp_trace_t unused;
+	    botimport.Trace(&unused, start, mins, maxs, end, passent, contentmask);
+    }
+        
 } //end of the function AAS_Trace
 //===========================================================================
 // returns the contents at the given point

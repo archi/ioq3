@@ -599,7 +599,7 @@ void BotInitLevelItems(void)
 			{
 				VectorCopy(origin, end);
 				end[2] -= 32;
-				trace = AAS_Trace(origin, ic->iteminfo[i].mins, ic->iteminfo[i].maxs, end, -1, CONTENTS_SOLID|CONTENTS_PLAYERCLIP);
+				AAS_Trace(&trace, origin, ic->iteminfo[i].mins, ic->iteminfo[i].maxs, end, -1, CONTENTS_SOLID|CONTENTS_PLAYERCLIP);
 				//if the item not near the ground
 				if (trace.fraction >= 1)
 				{
@@ -1644,7 +1644,7 @@ int BotItemGoalInVisButNotVisible(int viewer, vec3_t eye, vec3_t viewangles, bot
 	VectorScale(middle, 0.5, middle);
 	VectorAdd(goal->origin, middle, middle);
 	//
-	trace = AAS_Trace(eye, NULL, NULL, middle, viewer, CONTENTS_SOLID);
+	AAS_Trace(&trace, eye, NULL, NULL, middle, viewer, CONTENTS_SOLID);
 	//if the goal middle point is visible
 	if (trace.fraction >= 1)
 	{

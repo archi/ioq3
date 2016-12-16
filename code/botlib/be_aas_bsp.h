@@ -58,7 +58,8 @@ void AAS_PrintFreeBSPLinks(char *str);
 #define MAX_EPAIRKEY		128
 
 //trace through the world
-bsp_trace_t AAS_Trace(	vec3_t start,
+void AAS_Trace(bsp_trace_t *trace,
+                                vec3_t start,
 								vec3_t mins,
 								vec3_t maxs,
 								vec3_t end,

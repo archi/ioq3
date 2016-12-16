@@ -236,7 +236,7 @@ int AAS_GetJumpPadInfo(int ent, vec3_t areastart, vec3_t absmins, vec3_t absmaxs
 	//get the start areas
 	VectorCopy(origin, teststart);
 	teststart[2] += 64;
-	trace = AAS_TraceClientBBox(teststart, origin, PRESENCE_CROUCH, -1);
+	AAS_TraceClientBBox(&trace, teststart, origin, PRESENCE_CROUCH, -1);
 	if (trace.startsolid)
 	{
 		botimport.Print(PRT_MESSAGE, "trigger_push start solid\n");
@@ -398,7 +398,7 @@ int AAS_BestReachableArea(vec3_t origin, vec3_t mins, vec3_t maxs, vec3_t goalor
 		VectorCopy(start, end);
 		start[2] += 0.25;
 		end[2] -= 50;
-		trace = AAS_TraceClientBBox(start, end, PRESENCE_CROUCH, -1);
+		AAS_TraceClientBBox(&trace, start, end, PRESENCE_CROUCH, -1);
 		if (!trace.startsolid)
 		{
 			areanum = AAS_PointAreaNum(trace.endpos);
@@ -1543,7 +1543,7 @@ int AAS_Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, int area2
 				start[2] = ground_beststart[2];
 				VectorCopy(ground_bestend, end);
 				end[2] += 4;
-				trace = AAS_TraceClientBBox(start, end, PRESENCE_NORMAL, -1);
+				AAS_TraceClientBBox(&trace, start, end, PRESENCE_NORMAL, -1);
 				//if no solids were found
 				if (!trace.startsolid && trace.fraction >= 1.0)
 				{
@@ -2219,7 +2219,7 @@ int AAS_Reachability_Jump(int area1num, int area2num)
 		//
 		VectorCopy(teststart, testend);
 		testend[2] -= 100;
-		trace = AAS_TraceClientBBox(teststart, testend, PRESENCE_NORMAL, -1);
+		AAS_TraceClientBBox(&trace, teststart, testend, PRESENCE_NORMAL, -1);
 		//
 		if (trace.startsolid)
 			return qfalse;
@@ -2242,7 +2242,7 @@ int AAS_Reachability_Jump(int area1num, int area2num)
 		//
 		VectorCopy(teststart, testend);
 		testend[2] -= 100;
-		trace = AAS_TraceClientBBox(teststart, testend, PRESENCE_NORMAL, -1);
+		AAS_TraceClientBBox(&trace, teststart, testend, PRESENCE_NORMAL, -1);
 		//
 		if (trace.startsolid)
 			return qfalse;
@@ -2577,7 +2577,7 @@ int AAS_Reachability_Ladder(int area1num, int area2num)
 			start[2] += 5;
 			end[2] -= 100;
 			//trace without entity collision
-			trace = AAS_TraceClientBBox(start, end, PRESENCE_NORMAL, -1);
+			AAS_TraceClientBBox(&trace, start, end, PRESENCE_NORMAL, -1);
 			//
 			//
 #ifdef REACH_DEBUG
@@ -2665,7 +2665,7 @@ int AAS_Reachability_Ladder(int area1num, int area2num)
 					start[2] += 5;
 					end[2] -= 100;
 					//trace without entity collision
-					trace = AAS_TraceClientBBox(start, end, PRESENCE_NORMAL, -1);
+					AAS_TraceClientBBox(&trace, start, end, PRESENCE_NORMAL, -1);
 					//
 					if (trace.startsolid) break;
 					trace.endpos[2] += 1;
@@ -2842,7 +2842,7 @@ void AAS_Reachability_Teleport(void)
 		{
 			VectorCopy(destorigin, end);
 			end[2] -= 64;
-			trace = AAS_TraceClientBBox(destorigin, end, PRESENCE_CROUCH, -1);
+			AAS_TraceClientBBox(&trace, destorigin, end, PRESENCE_CROUCH, -1);
 			if (trace.startsolid)
 			{
 				botimport.Print(PRT_ERROR, "teleporter destination (%s) in solid\n", target);
@@ -3085,7 +3085,7 @@ void AAS_Reachability_Elevator(void)
 									start[2] += 32;
 									VectorCopy(toporg, end);
 									end[2] += 1;
-									trace = AAS_TraceClientBBox(start, end, PRESENCE_CROUCH, -1);
+									AAS_TraceClientBBox(&trace, start, end, PRESENCE_CROUCH, -1);
 									if (trace.fraction >= 1) break;
 								} //end if
 							} //end if
@@ -3411,14 +3411,14 @@ void AAS_Reachability_FuncBobbing(void)
 			{
 				nextstartreach = startreach->next;
 				//
-				//trace = AAS_TraceClientBBox(startreach->start, move_start_top, PRESENCE_NORMAL, -1);
+				//AAS_TraceClientBBox(&trace, startreach->start, move_start_top, PRESENCE_NORMAL, -1);
 				//if (trace.fraction < 1) continue;
 				//
 				for (endreach = firstendreach; endreach; endreach = nextendreach)
 				{
 					nextendreach = endreach->next;
 					//
-					//trace = AAS_TraceClientBBox(endreach->end, move_end_top, PRESENCE_NORMAL, -1);
+					//AAS_TraceClientBBox(&trace, endreach->end, move_end_top, PRESENCE_NORMAL, -1);
 					//if (trace.fraction < 1) continue;
 					//
 					Log_Write("funcbob reach from area %d to %d\n", startreach->areanum, endreach->areanum);
@@ -3540,7 +3540,7 @@ void AAS_Reachability_JumpPad(void)
 		//get the start areas
 		VectorCopy(origin, teststart);
 		teststart[2] += 64;
-		trace = AAS_TraceClientBBox(teststart, origin, PRESENCE_CROUCH, -1);
+		AAS_TraceClientBBox(&trace, teststart, origin, PRESENCE_CROUCH, -1);
 		if (trace.startsolid)
 		{
 			botimport.Print(PRT_MESSAGE, "trigger_push start solid\n");
@@ -3811,7 +3811,7 @@ int AAS_Reachability_Grapple(int area1num, int area2num)
 								start[0], start[1], start[2]);
 		VectorCopy(start, end);
 		end[2] -= 1000;
-		trace = AAS_TraceClientBBox(start, end, PRESENCE_CROUCH, -1);
+		AAS_TraceClientBBox(&trace, start, end, PRESENCE_CROUCH, -1);
 		if (trace.startsolid) return qfalse;
 		VectorCopy(trace.endpos, areastart);
 	} //end if
@@ -3855,7 +3855,7 @@ int AAS_Reachability_Grapple(int area1num, int area2num)
 		VectorCopy(facecenter, start);
 		VectorMA(facecenter, -500, aasworld.planes[face2->planenum].normal, end);
 		//
-		bsptrace = AAS_Trace(start, NULL, NULL, end, 0, CONTENTS_SOLID);
+		AAS_Trace(&bsptrace, start, NULL, NULL, end, 0, CONTENTS_SOLID);
 		//the grapple won't stick to the sky and the grapple point should be near the AAS wall
 		if ((bsptrace.surface.flags & SURF_SKY) || (bsptrace.fraction * 500 > 32)) continue;
 		//trace a full bounding box from the area center on the ground to
@@ -3864,14 +3864,14 @@ int AAS_Reachability_Grapple(int area1num, int area2num)
 		VectorNormalize(dir);
 		VectorMA(areastart, 4, dir, start);
 		VectorCopy(bsptrace.endpos, end);
-		trace = AAS_TraceClientBBox(start, end, PRESENCE_NORMAL, -1);
+		AAS_TraceClientBBox(&trace, start, end, PRESENCE_NORMAL, -1);
 		VectorSubtract(trace.endpos, facecenter, dir);
 		if (VectorLength(dir) > 24) continue;
 		//
 		VectorCopy(trace.endpos, start);
 		VectorCopy(trace.endpos, end);
 		end[2] -= AAS_FallDamageDistance();
-		trace = AAS_TraceClientBBox(start, end, PRESENCE_NORMAL, -1);
+		AAS_TraceClientBBox(&trace, start, end, PRESENCE_NORMAL, -1);
 		if (trace.fraction >= 1) continue;
 		//area to end in
 		areanum = AAS_PointAreaNum(trace.endpos);
@@ -4026,7 +4026,7 @@ int AAS_Reachability_WeaponJump(int area1num, int area2num)
 							start[0], start[1], start[2]);
 	VectorCopy(start, end);
 	end[2] -= 1000;
-	trace = AAS_TraceClientBBox(start, end, PRESENCE_CROUCH, -1);
+	AAS_TraceClientBBox(&trace, start, end, PRESENCE_CROUCH, -1);
 	if (trace.startsolid) return qfalse;
 	VectorCopy(trace.endpos, areastart);
 	//
@@ -4222,7 +4222,7 @@ void AAS_Reachability_WalkOffLedge(int areanum)
 						//
 						VectorCopy(mid, testend);
 						testend[2] -= 1000;
-						trace = AAS_TraceClientBBox(mid, testend, PRESENCE_CROUCH, -1);
+						AAS_TraceClientBBox(&trace, mid, testend, PRESENCE_CROUCH, -1);
 						//
 						if (trace.startsolid)
 						{

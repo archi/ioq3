@@ -445,7 +445,7 @@ qboolean AAS_AreaEntityCollision(int areanum, vec3_t start, vec3_t end,
 // Returns:					-
 // Changes Globals:		-
 //===========================================================================
-aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype,
+void AAS_TraceClientBBox(aas_trace_t *trace, vec3_t start, vec3_t end, int presencetype,
 																				int passent)
 {
 	int side, nodenum, tmpplanenum;
@@ -455,12 +455,11 @@ aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype,
 	aas_tracestack_t *tstack_p;
 	aas_node_t *aasnode;
 	aas_plane_t *plane;
-	aas_trace_t trace;
 
 	//clear the trace structure
-	Com_Memset(&trace, 0, sizeof(aas_trace_t));
+	Com_Memset(trace, 0, sizeof(aas_trace_t));
 
-	if (!aasworld.loaded) return trace;
+	if (!aasworld.loaded) return;
 	
 	tstack_p = tracestack;
 	//we start with the whole line on the stack
@@ -481,15 +480,15 @@ aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype,
 		{
 			tstack_p++;
 			//nothing was hit
-			trace.startsolid = qfalse;
-			trace.fraction = 1.0;
+			trace->startsolid = qfalse;
+			trace->fraction = 1.0;
 			//endpos is the end of the line
-			VectorCopy(end, trace.endpos);
+			VectorCopy(end, trace->endpos);
 			//nothing hit
-			trace.ent = 0;
-			trace.area = 0;
-			trace.planenum = 0;
-			return trace;
+			trace->ent = 0;
+			trace->area = 0;
+			trace->planenum = 0;
+			return;
 		} //end if
 		//number of the current node to test the line against
 		nodenum = tstack_p->nodenum;
@@ -500,7 +499,7 @@ aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype,
 			if (-nodenum > aasworld.numareasettings)
 			{
 				botimport.Print(PRT_ERROR, "AAS_TraceBoundingBox: -nodenum out of range\n");
-				return trace;
+				return;
 			} //end if
 #endif //AAS_SAMPLE_DEBUG
 			//botimport.Print(PRT_MESSAGE, "areanum = %d, must be %d\n", -nodenum, AAS_PointAreaNum(start));
@@ -514,27 +513,27 @@ aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype,
 						tstack_p->start[1] == start[1] &&
 						tstack_p->start[2] == start[2])
 				{
-					trace.startsolid = qtrue;
-					trace.fraction = 0.0;
+					trace->startsolid = qtrue;
+					trace->fraction = 0.0;
 					VectorClear(v1);
 				} //end if
 				else
 				{
-					trace.startsolid = qfalse;
+					trace->startsolid = qfalse;
 					VectorSubtract(end, start, v1);
 					VectorSubtract(tstack_p->start, start, v2);
-					trace.fraction = VectorLength(v2) / VectorNormalize(v1);
+					trace->fraction = VectorLength(v2) / VectorNormalize(v1);
 					VectorMA(tstack_p->start, -0.125, v1, tstack_p->start);
 				} //end else
-				VectorCopy(tstack_p->start, trace.endpos);
-				trace.ent = 0;
-				trace.area = -nodenum;
+				VectorCopy(tstack_p->start, trace->endpos);
+				trace->ent = 0;
+				trace->area = -nodenum;
 //				VectorSubtract(end, start, v1);
-				trace.planenum = tstack_p->planenum;
+				trace->planenum = tstack_p->planenum;
 				//always take the plane with normal facing towards the trace start
-				plane = &aasworld.planes[trace.planenum];
-				if (DotProduct(v1, plane->normal) > 0) trace.planenum ^= 1;
-				return trace;
+				plane = &aasworld.planes[trace->planenum];
+				if (DotProduct(v1, plane->normal) > 0) trace->planenum ^= 1;
+				return;
 			} //end if
 			else
 			{
@@ -542,19 +541,19 @@ aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype,
 				{
 					if (AAS_AreaEntityCollision(-nodenum, tstack_p->start,
 													tstack_p->end, presencetype, passent,
-													&trace))
+													trace))
 					{
-						if (!trace.startsolid)
+						if (!trace->startsolid)
 						{
 							VectorSubtract(end, start, v1);
-							VectorSubtract(trace.endpos, start, v2);
-							trace.fraction = VectorLength(v2) / VectorLength(v1);
+							VectorSubtract(trace->endpos, start, v2);
+							trace->fraction = VectorLength(v2) / VectorLength(v1);
 						} //end if
-						return trace;
+						return;
 					} //end if
 				} //end if
 			} //end else
-			trace.lastarea = -nodenum;
+			trace->lastarea = -nodenum;
 			continue;
 		} //end if
 		//if it is a solid leaf
@@ -567,33 +566,33 @@ aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype,
 					tstack_p->start[1] == start[1] &&
 					tstack_p->start[2] == start[2])
 			{
-				trace.startsolid = qtrue;
-				trace.fraction = 0.0;
+				trace->startsolid = qtrue;
+				trace->fraction = 0.0;
 				VectorClear(v1);
 			} //end if
 			else
 			{
-				trace.startsolid = qfalse;
+				trace->startsolid = qfalse;
 				VectorSubtract(end, start, v1);
 				VectorSubtract(tstack_p->start, start, v2);
-				trace.fraction = VectorLength(v2) / VectorNormalize(v1);
+				trace->fraction = VectorLength(v2) / VectorNormalize(v1);
 				VectorMA(tstack_p->start, -0.125, v1, tstack_p->start);
 			} //end else
-			VectorCopy(tstack_p->start, trace.endpos);
-			trace.ent = 0;
-			trace.area = 0;	//hit solid leaf
+			VectorCopy(tstack_p->start, trace->endpos);
+			trace->ent = 0;
+			trace->area = 0;	//hit solid leaf
 //			VectorSubtract(end, start, v1);
-			trace.planenum = tstack_p->planenum;
+			trace->planenum = tstack_p->planenum;
 			//always take the plane with normal facing towards the trace start
-			plane = &aasworld.planes[trace.planenum];
-			if (DotProduct(v1, plane->normal) > 0) trace.planenum ^= 1;
-			return trace;
+			plane = &aasworld.planes[trace->planenum];
+			if (DotProduct(v1, plane->normal) > 0) trace->planenum ^= 1;
+			return;
 		} //end if
 #ifdef AAS_SAMPLE_DEBUG
 		if (nodenum > aasworld.numnodes)
 		{
 			botimport.Print(PRT_ERROR, "AAS_TraceBoundingBox: nodenum out of range\n");
-			return trace;
+			return;
 		} //end if
 #endif //AAS_SAMPLE_DEBUG
 		//the node to test against
@@ -645,7 +644,7 @@ aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype,
 			if (tstack_p >= &tracestack[127])
 			{
 				botimport.Print(PRT_ERROR, "AAS_TraceBoundingBox: stack overflow\n");
-				return trace;
+				return;
 			} //end if
 		} //end if
 		//if the whole to be traced line is totally at the back of this node
@@ -659,7 +658,7 @@ aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype,
 			if (tstack_p >= &tracestack[127])
 			{
 				botimport.Print(PRT_ERROR, "AAS_TraceBoundingBox: stack overflow\n");
-				return trace;
+				return;
 			} //end if
 		} //end if
 		//go down the tree both at the front and back of the node
@@ -696,7 +695,7 @@ aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype,
 			if (tstack_p >= &tracestack[127])
 			{
 				botimport.Print(PRT_ERROR, "AAS_TraceBoundingBox: stack overflow\n");
-				return trace;
+				return;
 			} //end if
 			//now put the part near the start of the line on the stack so we will
 			//continue with thats part first. This way we'll find the first
@@ -709,7 +708,7 @@ aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype,
 			if (tstack_p >= &tracestack[127])
 			{
 				botimport.Print(PRT_ERROR, "AAS_TraceBoundingBox: stack overflow\n");
-				return trace;
+				return;
 			} //end if
 		} //end else
 	} //end while
